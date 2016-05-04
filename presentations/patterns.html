@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>scala patterns</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif);
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body {
+        font-family: 'Droid Serif';
+      }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: 400;
+        margin-bottom: 0;
+      }
+      .remark-slide-content h1 { font-size: 3em; }
+      .remark-slide-content h2 { font-size: 2em; }
+      .remark-slide-content h3 { font-size: 1.6em; }
+      .footnote {
+        position: absolute;
+        bottom: 3em;
+      }
+      li p { line-height: 1.25em; }
+      .red { color: #fa0000; }
+      .large { font-size: 2em; }
+      a, a > code {
+        color: rgb(249, 38, 114);
+        text-decoration: none;
+      }
+      code {
+        background: #e7e8e2;
+        border-radius: 5px;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .remark-code-line-highlighted     { background-color: #373832; }
+      .pull-left {
+        float: left;
+        width: 47%;
+      }
+      .pull-right {
+        float: right;
+        width: 47%;
+      }
+      .pull-right ~ p {
+        clear: both;
+      }
+      #slideshow .slide .content code {
+        font-size: 0.8em;
+      }
+      #slideshow .slide .content pre code {
+        font-size: 0.9em;
+        padding: 15px;
+      }
+      .inverse {
+        background: #272822;
+        color: #777872;
+        text-shadow: 0 0 20px #333;
+      }
+      .inverse h1, .inverse h2 {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+
+      /* Slide-specific styling */
+      #slide-inverse .footnote {
+        bottom: 12px;
+        left: 20px;
+      }
+      #slide-how .slides {
+        font-size: 0.9em;
+        position: absolute;
+        top:  151px;
+        right: 140px;
+      }
+      #slide-how .slides h3 {
+        margin-top: 0.2em;
+      }
+      #slide-how .slides .first, #slide-how .slides .second {
+        padding: 1px 20px;
+        height: 90px;
+        width: 120px;
+        -moz-box-shadow: 0 0 10px #777;
+        -webkit-box-shadow: 0 0 10px #777;
+        box-shadow: 0 0 10px #777;
+      }
+      #slide-how .slides .first {
+        background: #fff;
+        position: absolute;
+        top: 20%;
+        left: 20%;
+        z-index: 1;
+      }
+      #slide-how .slides .second {
+        position: relative;
+        background: #fff;
+        z-index: 0;
+      }
+
+      /* Two-column layout */
+      .left-column {
+        color: #777;
+        width: 20%;
+        height: 92%;
+        float: left;
+      }
+        .left-column h2:last-of-type, .left-column h3:last-child {
+          color: #000;
+        }
+      .right-column {
+        width: 75%;
+        float: right;
+        padding-top: 1em;
+      }
+
+    </style>
+</head>
+<body>
+<textarea id="source">
+
+class: center, middle
+
+# Scala Patterns
+
+![Default-aligned image](images/cake.jpg)
+---
+
+class: center, middle
+
+# Cake Pattern
+
+
+---
+
+class: middle
+
+
+```scala
+trait Filling {
+  def ingredients: String
+  def fillingType: filling
+}
+
+trait Cake {
+  def gerRecipe: String
+}
+
+```
+
+
+---
+
+class: middle
+
+### inheritance
+
+```scala
+trait Filling {
+  def ingredients: String = s"$fillingType: [...]"
+  def fillingType: filling
+}
+
+trait Cake extends Filling {
+  def getRecipe: String = ingredients
+}
+
+trait Chocolate extends Filling {
+  override val fillingType = chocolate
+}
+
+val cake = new Cake with Chocolate
+
+```
+
+---
+
+class: middle
+
+### composition [mix-in]
+
+```scala
+
+trait Filling {
+  def ingredients: String =
+    s"$fillingType: [...]"
+  def fillingType: filling
+}
+
+trait Cake {
+  def ingredient: Filling // <- composition
+  def getRecipe: String =
+    ingredient.ingredients
+}
+
+trait Chocolate extends Filling {
+  override val fillingType = chocolate
+}
+
+val cake = new Cake {
+  override def ingredient =
+    new Chocolate {}
+}
+
+```
+
+---
+
+class: middle
+
+### composition + inheritance
+
+```scala
+trait Filling {
+  def ingredients = s"$fillingType: [...]"
+  def fillingType: filling
+}
+
+trait Cake {
+  self: Filling =>  // <- composition
+  def getRecipe: String =
+    self.ingredients
+}
+
+trait Chocolate extends Filling {
+  override val fillingType =
+    chocolate
+}
+
+// inheritance
+object ChocolateCake extends Cake
+  with Chocolate
+```
+
+---
+
+class: center, middle
+
+# self-type annotation
+
+---
+
+class: middle
+
+```scala
+trait A { }
+
+trait B { self : A => }
+
+trait C[T] {}
+trait D[T] { self : A with C[T] => }
+
+trait E {
+  self : {
+    def log(x: String): Unit;
+    def count: Int
+  } =>
+
+}
+```
+
+---
+
+class: middle
+
+```scala
+
+trait FillingComponent {
+  trait Filling {
+    def ingredients =
+      s"$fillingType: [...]"
+
+    def fillingType: filling
+  }
+
+  protected val ingredient: Filling
+
+  class Chocolate extends Filling {
+    override val fillingType = chocolate
+  }
+}
+```
+
+---
+
+class: middle
+
+
+```scala
+trait CakeComponent {
+  self: FillingComponent =>
+
+  trait Cake {
+    def getRecipe: String
+  }
+
+  protected val cake: Cake
+  protected class ChocolateCake extends Cake {
+    def getRecipe = ingredient.ingredients
+  }
+}
+```
+
+---
+
+class: middle
+
+```scala
+class MyCake
+  extends CakeComponent
+  with FillingComponent {
+
+  override val ingredient = new Chocolate
+  override val cake = new ChocolateCake
+}
+
+```
+
+---
+
+class: middle
+
+### summary
+
++ components
+
++ compile-time guarantees (self-type)
+
+- difficult for implementation
+
+---
+
+class: center, middle
+
+# "pimp" my library
+
+---
+
+class: middle
+
+### How to extend class from library???
+
+```scala
+class StringExt(x: String) {
+  def isFoo = x.toLowerCase == "foo"
+}
+
+implicit def stringOps(x: String): StringExt =
+  new StringExt(x)
+
+println("foo".isFoo)
+```
+
+---
+
+class: middle
+
+### compiler output
+
+```text
+implicit def stringOps(x: String): StringExt =
+  new StringExt(x);
+
+... isFoo impl
+
+def isFoo(): Boolean =
+  StringExt.this.x.toLowerCase().==("foo")
+
+... println
+
+scala.this.Predef.println(
+  scala.Boolean.box(stringOps("foo").isFoo()))
+```
+
+---
+
+class: middle
+
+### AnyVal -> call method without object allocation*
+
+```scala
+class StringExt(val x: String) extends AnyVal {
+  def isFoo = x.toLowerCase == "foo"
+}
+
+implicit def stringOps(x: String): StringExt =
+  new StringExt(x)
+
+println("foo".isFoo)
+```
+
+### * it depends: [about anyval](http://docs.scala-lang.org/overviews/core/value-classes.html)
+
+---
+
+class: middle
+
+### compiler output
+
+```text
+implicit def stringOps(x: String): String = x
+
+... isFoo impl
+
+final def isFoo$extension($this: String): Boolean =
+  $this.toLowerCase().==("foo")
+
+... println
+
+scala.this.Predef.println(scala.
+  Boolean.box(StringExt.this.isFoo$extension(stringOps("foo))
+```
+
+---
+
+class: middle
+
+### implicit class [SIP-13]
+
+```scala
+implicit class StringExt(x: String) {
+  def isFoo = x.toLowerCase == "foo"
+}
+
+println("a".isFoo)
+```
+
+[SIP-13](http://docs.scala-lang.org/sips/completed/implicit-classes.html)
+
+---
+
+class: center, middle
+
+# Typeclasses
+
+---
+
+class: middle
+
+### library
+
+```scala
+trait Show {       // <- trait (interface like)
+  def show: String
+}
+
+// library method
+def p[T <: Show](x: T) = println(x.show)
+```
+
+### and in userland
+
+```scala
+case class Person(id: Int, name: String)
+           extends Show {           // <- library interface
+  def show = toString               // <- impl
+}
+val person = Person(1, "x")
+
+p(person)
+```
+
+---
+
+class: middle
+
+```scala
+trait Show[T] {
+  def show(x: T): String
+}
+
+
+### library function
+
+def p[T](x: T)(implicit s: Show[T]) =
+  println(s.show(x))
+```
+
+---
+
+class: center, middle
+
+# How to use?
+
+---
+
+class: middle
+
+### without implicit
+
+```
+  could not find implicit value for parameter
+
+  s: Show[TypeClasses.Person]
+```
+---
+
+class: middle
+
+### define type class instance for T
+
+```scala
+
+implicit val personShow = new Show[Person] {
+  def show(x: Person) =
+    s"Person[id=${x.id} & name=${x.name}]"
+}
+
+p(person) // => Person[id=1 & name=x]
+
+implicit object intShow extends Show[Int] {
+  def show(x: Int) = s"Int=$x"
+}
+
+p(1) // => Int=1
+```
+
+---
+
+class: middle
+
+
+### sugar (use implicitly)
+
+```scala
+
+def p[T : Show](x: T) =
+  println(implicitly[Show[T]].show(x))
+
+```
+
+### under the hood
+
+```scala
+def implicitly[T](implicit e: T): T = e
+```
+
+---
+
+class: middle
+
+### more typeclasses!
+
+```scala
+
+def p[T : Show : Show1](x: T) =
+  println(implicitly[Show[T]].show(x) +
+          implicitly[Show1[T]].show1(x)
+  )
+
+trait Show[T] {
+  def show(x: T): String
+}
+
+trait Show1[T] {
+  def show1(x: T): String
+}
+
+// impl
+
+implicit val personShow = new Show[Person] {
+  def show(x: Person) =
+    s"Person[id=${x.id}"
+}
+
+implicit val personShow1 = new Show1[Person] {
+  def show1(x: Person) =
+    s" & name=${x.name}]"
+}
+
+p(person)  // => Person[id=1 & name=x]
+
+```
+
+---
+
+class: middle, center
+
+# Questions?
+
+
+    </textarea>
+<script src="remark-latest.min.js">
+</script>
+<script>
+      var slideshow = remark.create({
+        highlightStyle: 'tomorrow'
+      });
+    </script>
+<script src="remark-zoom.js" type="text/javascript"></script>
+</body>
+</html>
