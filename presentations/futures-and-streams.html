@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>scala patterns</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif);
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body {
+        font-family: 'Droid Serif';
+      }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: 400;
+        margin-bottom: 0;
+      }
+      .remark-slide-content h1 { font-size: 3em; }
+      .remark-slide-content h2 { font-size: 2em; }
+      .remark-slide-content h3 { font-size: 1.6em; }
+      .footnote {
+        position: absolute;
+        bottom: 3em;
+      }
+      li p { line-height: 1.25em; }
+      .red { color: #fa0000; }
+      .large { font-size: 2em; }
+      a, a > code {
+        color: rgb(249, 38, 114);
+        text-decoration: none;
+      }
+      code {
+        background: #e7e8e2;
+        border-radius: 5px;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .remark-code-line-highlighted     { background-color: #373832; }
+      .pull-left {
+        float: left;
+        width: 47%;
+      }
+      .pull-right {
+        float: right;
+        width: 47%;
+      }
+      .pull-right ~ p {
+        clear: both;
+      }
+      #slideshow .slide .content code {
+        font-size: 0.8em;
+      }
+      #slideshow .slide .content pre code {
+        font-size: 0.9em;
+        padding: 15px;
+      }
+      .inverse {
+        background: #272822;
+        color: #777872;
+        text-shadow: 0 0 20px #333;
+      }
+      .inverse h1, .inverse h2 {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+
+      /* Slide-specific styling */
+      #slide-inverse .footnote {
+        bottom: 12px;
+        left: 20px;
+      }
+      #slide-how .slides {
+        font-size: 0.9em;
+        position: absolute;
+        top:  151px;
+        right: 140px;
+      }
+      #slide-how .slides h3 {
+        margin-top: 0.2em;
+      }
+      #slide-how .slides .first, #slide-how .slides .second {
+        padding: 1px 20px;
+        height: 90px;
+        width: 120px;
+        -moz-box-shadow: 0 0 10px #777;
+        -webkit-box-shadow: 0 0 10px #777;
+        box-shadow: 0 0 10px #777;
+      }
+      #slide-how .slides .first {
+        background: #fff;
+        position: absolute;
+        top: 20%;
+        left: 20%;
+        z-index: 1;
+      }
+      #slide-how .slides .second {
+        position: relative;
+        background: #fff;
+        z-index: 0;
+      }
+
+      /* Two-column layout */
+      .left-column {
+        color: #777;
+        width: 20%;
+        height: 92%;
+        float: left;
+      }
+        .left-column h2:last-of-type, .left-column h3:last-child {
+          color: #000;
+        }
+      .right-column {
+        width: 75%;
+        float: right;
+        padding-top: 1em;
+      }
+
+    </style>
+</head>
+<body>
+<textarea id="source">
+
+class: center, middle
+
+# Futures & akka-streams
+
+---
+
+class: center, middle
+
+# Futures
+
+---
+
+layout: false
+.left-column[
+  ## old java api
+  ## new api
+]
+
+.right-column[
+
+> Thread
+
+
++ Executor#run(Runnable r)
+
++ ExecutorService#submit
+
++ ExecutorService#awaitTermination
+
++ ExecutorService#shutdown
+
+]
+
+---
+
+class: middle
+
+### step 1
+
+
+```scala
+
+// ... code
+
+val result = submitForm       // <- blocking call
+
+println(s"===> result(1)=$result")
+```
+
+---
+
+class: middle
+
+### step 2 (naive implementation)
+
+```scala
+val result = Future(submitForm)
+Thread.sleep(100)
+
+if (result.isCompleted) {
+  // result.value: Option[Try[String]
+  println(s"===> result(2)=${result.value.get.get}")
+} else {
+  println("failed") // result is None
+}
+```
+
+---
+
+class: middle
+
+### step 3 (callback)
+
+```scala
+import scala.util.{Success, Failure}
+
+val result = Future(submitForm)
+
+result.onComplete {
+  case Success(r) => println(s"===> result(3)=$r")
+  case Failure(e) => println(s"failed: ${e.getMessage}")
+}
+
+```
+
+---
+
+### step 4 (monad)
+
+```scala
+Future { 
+  submitForm 
+}.map { result =>
+  println(s"===> result(4)=$result")
+}
+
+for {
+  result <- Future(submitForm)
+} yield println(s"===> result(4.1)=$result")
+
+// run in parallel
+val future1 = Future(submitForm)
+val future2 = Future(submitForm)
+for {
+  result1 <- future1
+  result2 <- future2
+} yield println(s"result(4.2)=$result1 & result(4.3)=$result2")
+
+```
+
+---
+
+class: middle
+
+### error handling
+
++ recover/recoverWith
+
+```scala
+Future(submitFormException).map { result =>
+  println(s"result(5)=$result")
+}.recover {
+  case x: Throwable => println(s"failed: ${x.getMessage}")
+}
+```
+
++ failed
+
+```scala
+Future(submitFormException).failed.foreach {
+  x =>
+    println(s"foreach: $x")
+}
+```
+
++ fallbackTo
+
+```scala
+Future(submitFormException)
+.fallbackTo(Future.successful("uuid"))
+.foreach { result =>
+  println(s"result(fallback)=$result")
+}
+
+```
+
+---
+
+class: middle
+
+### useful methods
+
+```scala
+// Future of Future -> flatten in 2.12
+Future(Future(submitForm)).flatMap(identity)
+
+// from List[Futures] to Future[List]
+Future.sequence {
+  List(
+    Future(submitForm),
+    Future(submitForm),
+    Future(submitForm)
+  )
+}.foreach { xs => // List[String]
+
+}
+
+
+```
+
+[>>>2.12<<<](https://github.com/viktorklang/blog/)
+
+---
+
+# hints
+
+1. don't use `scala.concurrent.ExecutionContext.Implicits.global`
+
+2. use custom execution context
+
+
+```scala
+implicit val ec = ExecutionContext.fromExecutorService(
+  java.util.concurrent.Executors.newCachedThreadPool()
+)
+```
+
+3. use Futures for IO operations
+
+```scala
+Future { 1 + 1 } // bad
+
+// =>
+
+Future.successful(1 + 1)
+```
+
+4. be careful with `scala.concurrent.blocking`
+
+---
+
+# Promises
+
+
+```scala
+
+import scala.concurrent.Promise
+
+val p = Promise[String]()
+
+val f = p.future
+
+f.onComplete {
+  case x => println(s"wow! $x")
+}
+
+p.success(submitForm)
+```
+
+---
+
+# Await
+
+```scala
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+
+// block thread !
+val result = 
+  Await.result(Future(submitForm), 150 millis)
+
+```
+
+---
+
+
+# async/await
+
+```scala
+import scala.async.Async.{async, await}
+import scala.concurrent.Future
+
+// 1
+async {  // <- Future[String]
+  submitForm
+}.foreach { result =>
+   println(s"===> result(async)=$result")
+}
+
+// 2
+async {
+  val f1 = await(Future(submitForm))
+  val f2 = await(Future(submitForm))
+  s"$f1 & $f2"
+}.foreach { result =>
+  println(s"complex: $result")
+}
+```
+
+---
+
+class: center, middle
+
+# akka-streams
+
+---
+
+class: middle
+
+# source
+
+```scala
+
+val source = 
+  Source(1 to 3)
+
+val source1 = 
+  Source.fromIterator(() => Iterator.from(0))
+
+val source2 = 
+  Source.fromFuture(Future.successful("ok"))
+
+```
+
+### .red[use Source for http request, db query]
+
+---
+
+class: middle
+
+# sink
+
+```scala
+           // Sink[Int, Future[Unit]]
+val sink = Sink.foreach[Int](x => println(s"-> $x"))
+```
+
+### .red[Sink for write operations, like write in db, file ...]
+
+---
+
+
+# RunnableGraph
+
+.red[Source + Sink = RunnableGraph (minimum stream)]
+
+```scala
+val runnableGraph = source to sink
+```
+
+---
+
+# flow
+
+flow like a different filter* methods
+
+```scala
+Source -> Flow -> Flow -> ... -> Flow -> Sink
+```
+
+Flow had input and output
+
+```scala
+Source + Flow = Source
+
+Flow + Sink = Sink
+
+Source + Flow + Sink = Runnable Flow
+```
+
+Flow like a `|` in linux shell
+
+```scala
+val flow1 = Flow[Int].map(x => x * 10)
+val flow2 = Flow[Int].map(x => x - 1)
+
+source via flow1 via flow2 to sink run
+
+// => source | flow1 | flow2 >> file.txt
+
+```
+
+---
+
+# Stream transformation
+
++ like in collections: filter, map, fold
++ time based: takeWithin, *Within
++ rate: expand, conflate, buffer
++ async: mapAsync, *Async
+
+---
+
+# Graph dsl
+
+task: 
+
+1. create post request (name & email) then send
+2. write result in bd
+3. send email
+
+## or in flow:
+
+```
+email                              insert 
+      ~> create request ~> send ~>  
+name                               send email
+```
+
+---
+
+class: middle
+
+```scala
+case class RequestResult(result: String)
+
+val emailSource = 
+  Source
+    .fromFuture(Future.successful("email@email.com")) 
+
+RunnableGraph
+  .fromGraph(GraphDSL.create(emailSource) { 
+    implicit builder => email =>
+  
+  import GraphDSL.Implicits._
+  
+  val name = Source.single("name")
+  val zip = builder.add(Zip[String, String])
+  val broadcast = builder.add(Broadcast[RequestResult](2))
+
+  val requestResult = Flow[(String, String)].map { case _ @ (a, b) =>
+    RequestResult(s"$a: $b")
+  }
+
+  val sendEmail = Sink
+    .foreach[RequestResult](x => println(s"send email: $x"))
+  val insertInDb = Sink
+    .foreach[RequestResult](x => println(s"insert $x"))
+
+  name  ~> zip.in0
+  email ~> zip.in1
+  zip.out ~> requestResult ~> broadcast ~> sendEmail
+  broadcast ~> insertInDb
+
+  ClosedShape
+}).run
+```
+
+---
+
+# Error handling
+
+```scala
+val supervisor: Supervision.Decider = {
+  case _ => Supervision.Resume
+}
+    
+implicit val mat = ActorMaterializer(
+  ActorMaterializerSettings(system)
+    .withSupervisionStrategy(supervisor)
+)
+
+val sourceN = Source(-1 to 1)
+sourceN.map(x => 1 / x).runForeach(x => println(s"/ => $x"))
+// output: -1, 1
+```
+
+---
+
+class: middle, center
+
+# Questions?
+
+
+    </textarea>
+<script src="remark-latest.min.js">
+</script>
+<script>
+      var slideshow = remark.create({
+        highlightStyle: 'tomorrow'
+      });
+    </script>
+<script src="remark-zoom.js" type="text/javascript"></script>
+</body>
+</html>

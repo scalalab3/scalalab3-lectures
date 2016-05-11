@@ -14,7 +14,7 @@ object ScalalabBuild extends Build with SbtUtils {
 
   lazy val lectures_fs = project("futures-and-streams", "lectures/futures-and-streams")
     .settings(
-      Seq(libraryDependencies ++= akka)
+      Seq(libraryDependencies ++= akka ++ Seq(async))
     )
 
   lazy val main = project("scalalab3", ".").settings(

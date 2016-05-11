@@ -25,6 +25,8 @@ trait Deps {
     "com.typesafe.akka" %% "akka-stream-experimental" % "2.0.3"
   )
 
+  val async = "org.scala-lang.modules" %% "scala-async" % "0.9.5"
+
   val libs = Seq(
 
   )
