@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>scala patterns</title>
+    <title>futures & akka-streams</title>
     <meta charset="utf-8">
     <style>
       @import url(https://fonts.googleapis.com/css?family=Droid+Serif);
@@ -169,6 +169,10 @@ val result = submitForm       // <- blocking call
 println(s"===> result(1)=$result")
 ```
 
+
+
+.center[![image](images/f1.png)]
+
 ---
 
 class: middle
@@ -187,6 +191,8 @@ if (result.isCompleted) {
 }
 ```
 
+.center[![image](images/f2.png)]
+
 ---
 
 class: middle
@@ -204,6 +210,8 @@ result.onComplete {
 }
 
 ```
+
+.center[![image](images/f3.png)]
 
 ---
 
@@ -229,6 +237,8 @@ for {
 } yield println(s"result(4.2)=$result1 & result(4.3)=$result2")
 
 ```
+
+.center[![image](images/f4.png)]
 
 ---
 
@@ -384,6 +394,12 @@ async {
 class: center, middle
 
 # akka-streams
+
+---
+
+class: center
+
+.center[![image](images/f5.png)]
 
 ---
 
