@@ -17,6 +17,10 @@ object ScalalabBuild extends Build with SbtUtils {
       Seq(libraryDependencies ++= akka ++ Seq(async))
     )
 
+  lazy val lectures_actors = project("actors", "lectures/actors").settings(
+    Seq(libraryDependencies ++= akka)
+  )
+
   lazy val main = project("scalalab3", ".").settings(
     Seq(
       name := "scalalab3",
