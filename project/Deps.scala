@@ -7,6 +7,7 @@ trait Deps {
     val shapelessVersion = "2.3.0"
     val mongoVersion = "3.1.1"
     val akkaVersion = "2.3.9"
+    val scalaZVersion = "7.2.2"
   }
 
   import V._
@@ -26,6 +27,8 @@ trait Deps {
   )
 
   val async = "org.scala-lang.modules" %% "scala-async" % "0.9.5"
+
+  val scalaz = "org.scalaz" %% "scalaz-core" % scalaZVersion
 
   val libs = Seq(
 

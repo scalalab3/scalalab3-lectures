@@ -7,7 +7,7 @@ object ScalalabBuild extends Build with SbtUtils {
     Seq(libraryDependencies ++= mongo)
   )
 
-  lazy val lectures_shpls = project("shpls", "lectures/shpls")
+  lazy val lectures_shapeless = project("shapeless", "lectures/shapeless")
       .settings(
         Seq(libraryDependencies ++= Seq(shapeless) ++ mongo)
       )
@@ -21,12 +21,22 @@ object ScalalabBuild extends Build with SbtUtils {
     Seq(libraryDependencies ++= akka)
   )
 
+  lazy val lectures_scalaz = project("scalaz", "lectures/scalaz").settings(
+    Seq(libraryDependencies ++= Seq(scalaz))
+  )
+
   lazy val main = project("scalalab3", ".").settings(
     Seq(
       name := "scalalab3",
       libraryDependencies ++= Seq()
     )
-  ) dependsOn (lectures_di, lectures_shpls, lectures_fs)
+  ) dependsOn (
+    lectures_di,
+    lectures_shapeless,
+    lectures_fs,
+    lectures_actors,
+    lectures_scalaz
+  )
 
 
 }

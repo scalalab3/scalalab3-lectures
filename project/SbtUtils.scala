@@ -16,6 +16,9 @@ trait SbtUtils extends Deps {
       "-Xfuture",
       "-Yno-adapted-args",
       "-Ywarn-dead-code"
+//      "-Xprint:4"
+//      "-Xlog-implicits",
+//      "-Xlog-implicit-conversions"
     ),
     resolvers += Resolver.sonatypeRepo("snapshots"),
     resolvers += Resolver.sonatypeRepo("releases"),
