@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>shapeless</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif);
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body {
+        font-family: 'Droid Serif';
+      }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: 400;
+        margin-bottom: 0;
+      }
+      .remark-slide-content h1 { font-size: 3em; }
+      .remark-slide-content h2 { font-size: 2em; }
+      .remark-slide-content h3 { font-size: 1.6em; }
+      .footnote {
+        position: absolute;
+        bottom: 3em;
+      }
+      li p { line-height: 1.25em; }
+      .red { color: #fa0000; }
+      .large { font-size: 2em; }
+      a, a > code {
+        color: rgb(249, 38, 114);
+        text-decoration: none;
+      }
+      code {
+        background: #e7e8e2;
+        border-radius: 5px;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .remark-code-line-highlighted     { background-color: #373832; }
+      .pull-left {
+        float: left;
+        width: 47%;
+      }
+      .pull-right {
+        float: right;
+        width: 47%;
+      }
+      .pull-right ~ p {
+        clear: both;
+      }
+      #slideshow .slide .content code {
+        font-size: 0.8em;
+      }
+      #slideshow .slide .content pre code {
+        font-size: 0.9em;
+        padding: 15px;
+      }
+      .inverse {
+        background: #272822;
+        color: #777872;
+        text-shadow: 0 0 20px #333;
+      }
+      .inverse h1, .inverse h2 {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+
+      /* Slide-specific styling */
+      #slide-inverse .footnote {
+        bottom: 12px;
+        left: 20px;
+      }
+      #slide-how .slides {
+        font-size: 0.9em;
+        position: absolute;
+        top:  151px;
+        right: 140px;
+      }
+      #slide-how .slides h3 {
+        margin-top: 0.2em;
+      }
+      #slide-how .slides .first, #slide-how .slides .second {
+        padding: 1px 20px;
+        height: 90px;
+        width: 120px;
+        -moz-box-shadow: 0 0 10px #777;
+        -webkit-box-shadow: 0 0 10px #777;
+        box-shadow: 0 0 10px #777;
+      }
+      #slide-how .slides .first {
+        background: #fff;
+        position: absolute;
+        top: 20%;
+        left: 20%;
+        z-index: 1;
+      }
+      #slide-how .slides .second {
+        position: relative;
+        background: #fff;
+        z-index: 0;
+      }
+
+      /* Two-column layout */
+      .left-column {
+        color: #777;
+        width: 20%;
+        height: 92%;
+        float: left;
+      }
+        .left-column h2:last-of-type, .left-column h3:last-child {
+          color: #000;
+        }
+      .right-column {
+        width: 75%;
+        float: right;
+        padding-top: 1em;
+      }
+
+    </style>
+</head>
+<body>
+<textarea id="source">
+
+class: center, middle
+
+# typelevel ~> shapeless
+
+---
+
+class: middle
+
+# List
+
+```scala
+sealed trait List[+A] {
+  def ::[AA >: A](h: AA): List[AA] = new ::(h, this)
+}
+case object Nil extends List[Nothing]
+case class ::[+A](head: A, tail: List[A]) extends List[A]
+
+```
+
+---
+
+class: middle
+
+# Anonymous Function
+
+```scala
+(x: Int) => x + 1
+
+// or 
+
+new Function1[Int, Int] {
+  def apply(x: Int) = x + 1
+}
+
+```
+
+---
+
+class: middle
+
+# Implicits, Type classes
+
+
+```scala
+
+trait Show[T] {
+  def show(x: T): String 
+}
+
+```
+
+---
+
+class: middle
+
+# Singleton Types
+
+```scala
+
+def fooOnly(x: String) = {
+  if (x != "foo") {
+    throw new RuntimeException("boom!")
+  } else {
+    println(x)
+  }
+}
+
+```
+
+---
+
+class: middle
+
+# Singleton Types
+
+```scala
+object O {
+  val singetonFoo = "foo"
+}
+
+def fooOnly(x: O.type) = {
+  println(O.singetonFoo)
+}
+
+```
+
+
+---
+
+class: middle
+
+# Singleton Types (shapeless)
+
+```scala
+import shapeless._
+import shapeless.syntax.singleton._ 
+
+
+val singletonFoo = "foo".narrow
+
+def fooOnly(x: singletonFoo.type) = {
+  println(x)
+}
+```
+
+[Singleton Types: SIP-23](http://docs.scala-lang.org/sips/pending/42.type.html)
+
+
+class: middle
+
+# Phantom Types
+
+
+```scala
+
+class QuertyBuilder {
+  def select(params: String) = this
+  def from(table: String) = this
+  def where(cond: String) = this
+}
+
+val query = new QuertyBuilder()
+```
+
+---
+
+class: middle 
+
+# Phatnom Types
+
+
+```scala
+
+
+query.select("id").from("persons").where("id = 10") // => ok
+
+```
+
+---
+
+class: middle
+
+# Phatnom Types
+
+```scala
+query.from("persons").where("id = 10") // RuntimeException ! 
+```
+
+---
+
+class: middle
+
+# Phantom Types
+
+```scala
+sealed trait State
+trait Start extends State
+trait Select extends State
+trait From extends State
+trait Where extends State
+
+class QuertyBuilder[T <: State] private () {
+  def select(params: String)(implicit ev: T =:= Start) = new QuertyBuilder[Select]
+  def from(table: String)(implicit ev: T =:= Select) = new QuertyBuilder[From]
+  def where(cond: String)(implicit ev: T =:= From) = new QuertyBuilder[Where]
+}
+object QuertyBuilder {
+  def apply() = new QuertyBuilder[Start]
+}
+
+```
+
+---
+
+class: middle
+
+# Phatnom Types
+
+```scala
+import shapeless.test._
+
+illTyped("""query.from("id").where("id = 10")""") // does not compile
+
+query.select("id").from("persons").where("id = 10") // ok
+```
+
+---
+
+class: middle, center
+
+# Poly
+
+---
+
+class: middle
+
+# Poly
+
+```scala
+
+val inc = (x: Int) => x + 1
+
+val inc = (x: Double) => x + 1
+
+```
+
+---
+
+class: middle
+
+# Poly
+
+```scala
+object LikePolyFunction {
+  def apply(x: Int) = println(s"int: $x")
+  def apply(x: String) = println(s"string: $x")
+}
+
+
+LikePolyFunction(1)     // ok
+LikePolyFunction("foo") // ok 
+
+LikePolyFunction(1d) // does not compile
+
+```
+
+---
+
+class: middle
+
+# Poly
+
+```scala
+
+object isString extends Poly1 {
+  implicit def whenInt = at[Int](_ => false)
+  implicit def whenString = at[String](x => true)
+
+  implicit def default[T] = at[T](_ => false)
+}
+
+println(s"is string: ${isString(1)}")  // => false
+println(s"is string: ${isString(1d)}") // => false
+println(s"is string: ${isString("foo")}") // => true
+
+```
+
+---
+
+class: center, middle
+
+# Coproduct
+
+---
+
+class: middle
+
+# Coproduct
+
+```scala
+
+hobbyList: String | List of String | All
+
+
+case class Person(name: String, hobbyList: ???)
+
+```
+
+---
+
+class: middle
+
+# Coproduct
+
+```scala
+import shapeless.{CNil, :+:, Coproduct}
+
+case object All
+
+type Interests = String :+: List[String] :+: All.type :+: CNil
+
+case class Person(name: String, interests: Interests)
+```
+
+---
+
+class: middle
+
+# Coproduct
+
+```scala
+val p1_i = Coproduct[Interests]("reading")
+val p2_i = Coproduct[Interests]("reading" :: "fishing" :: Nil)
+val p3_i = Coproduct[Interests](All)
+
+
+val p1 = Person("name-1", p1_i)
+val p2 = Person("name-2", p2_i)
+val p3 = Person("name-3", p3_i)
+
+```
+
+---
+
+class: middle
+
+# Coproduct
+
+```scala
+println(p1_i.select[String])       // => Some(reading)
+println(p1_i.select[List[String]]) // => None
+println(p1_i.select[All.type])     // => None
+
+println(p1_i.at(0)) //  => Some(reading)
+```
+
+---
+
+class: middle
+
+# Coproduct
+
+```scala
+
+val fishing = "fishing"
+
+object addFishing extends Poly1 {
+  implicit def caseString = at[String](x => x :: fishing :: Nil)
+  implicit def caseList   = at[List[String]](xs => xs :+ fishing)
+  implicit def caseAll    = at[All.type](identity)
+}
+
+val p1_i_d = p1_i.map(addFishing)
+println(p1_i_d.at(0)) // => Some(List(reading, fishing))
+
+```
+
+---
+
+class: center, middle
+
+# HList
+
+---
+
+class: middle
+
+```scala
+// scala list
+
+sealed trait List[+A] {
+  def ::[AA >: A](h: AA): List[AA] = new ::(h, this)
+}
+case object Nil extends List[Nothing]
+case class ::[+A](head: A, tail: List[A]) extends List[A]
+
+// shapeless list
+
+sealed trait HList
+sealed trait HNil extends HList {
+  def ::[H](h: H): H :: HNil = new ::(h, this)
+}
+case object HNil extends HNil
+case class ::[+H, +T <: HList](head: H, tail: T) extends HList {
+  def ::[G](g: G): G :: H :: T = new ::(g, this)
+}
+
+```
+
+---
+
+class: middle
+
+```scala
+val l = 1 :: "asd" :: Nil // => warning: a type was inferred to be `Any`;
+
+import shapeless.HNil
+val hl = 1 :: "asd" :: HNil
+```
+
+---
+
+class: middle
+
+```scala
+println(hl.at(0)) // => 1
+
+println(hl take 1) // => 1 :: HNil
+```
+
+---
+
+class: middle
+
+```scala
+
+trait LowPriorityImplicits extends Poly2 {
+  implicit def default[Element, L <: HList] = at[Element, L]((_, list) => {
+    list
+  })
+}
+
+object takeString extends LowPriorityImplicits {
+  implicit def whenString[Acc, L <: HList] = at[String, L]((element, acc) => {
+    element :: acc
+  })
+}
+
+```
+
+---
+
+class: middle
+
+```scala
+val hls = 1 :: "foo" :: "bar" :: 10 :: HNil
+
+hls.foldRight(HNil)(takeString) // => foo :: bar :: HNil
+```
+
+---
+
+class: middle
+
+
+```scala
+
+trait Stringify[L <: HList] {
+  type Out <: HList
+  def apply(l: L): Out
+}
+
+```
+
+---
+
+class: middle
+
+```scala
+final class MyHListAdditionalMethods[L <: HList](val l: L) {
+  def stringify(implicit stringify: Stringify[L]): stringify.Out = stringify(l)
+}
+
+```
+
+---
+
+class: middle
+
+```scala
+
+object Stringify {
+  
+  def apply[I <: HList, O <: HList](implicit s: Stringify.Aux[I, O]) = s
+
+  type Aux[I <: HList, O <: HList] = Stringify[I] { type Out = O }
+
+}
+
+
+```
+
+---
+
+class: middle
+
+```scala
+
+xs match {
+
+  case x::Nil =>
+
+  case x::xs =>
+
+  case Nil => 
+
+}
+
+```
+
+---
+
+class: middle
+
+```scala
+object Stringify {
+
+implicit def stringifyHNil: Stringify.Aux[HNil, HNil] = ???
+
+  
+implicit def stringifyHead[L]: Stringify.Aux[L :: HNil, String :: HNil] = ???
+
+implicit def stringifyTail[L <: HList, H, T <: HList, X <: HList](
+  implicit c: IsHCons.Aux[L, H, T], s: Stringify.Aux[T, X]
+): Stringify.Aux[L, String :: X] = ???
+  
+}
+```
+
+
+---
+
+class: middle
+
+```scala
+
+object Stringify {
+  def apply[I <: HList, O <: HList](implicit s: Stringify.Aux[I, O]) = s
+
+  type Aux[I <: HList, O <: HList] = Stringify[I] { type Out = O }
+
+  
+  implicit def stringifyHNil: Stringify.Aux[HNil, HNil] = new Stringify[HNil] {
+    type Out = HNil
+    def apply(l: HNil) = l
+  }
+
+  
+  implicit def stringifyHead[L]: Stringify.Aux[L :: HNil, String :: HNil] =
+    new Stringify[L :: HNil] {
+      type Out = String :: HNil
+      def apply(l: L :: HNil) = l.head.toString :: HNil
+    }
+
+  
+  implicit def stringifyTail[L <: HList, H, T <: HList, X <: HList](
+    implicit c: IsHCons.Aux[L, H, T], s: Stringify.Aux[T, X]
+  ): Stringify.Aux[L, String :: X] =
+    new Stringify[L] {
+      type Out = String :: X
+      def apply(l: L) = {
+        l.head.toString :: l.tail.stringify
+      }
+    }
+}
+
+```
+
+---
+
+class: middle
+
+```scala
+implicit def 
+  hlistOps1[L <: HList](l: L): MyHListAdditionalMethods[L] =
+    new MyHListAdditionalMethods(l)
+
+val l1 = 1 :: 10 :: HNil 
+// => shapeless.::[Int,shapeless.::[Int,shapeless.HNil]]   
+
+val l2 = l1.stringify    
+// => shapeless.::[String,shapeless.::[String,shapeless.HNil]]
+```
+---
+
+class: middle, center
+
+# Records
+
+
+---
+
+class: middle
+
+
+```scala
+import shapeless.record._
+import shapeless.syntax.singleton._
+import shapeless.HNil
+
+
+val record = ("id" ->> 1) :: ("name" ->> "John Doe") :: HNil
+
+
+```
+
+---
+
+class: middle
+
+```scala
+
+record("id") // => 1
+
+record.keys // => id :: name :: HNil
+
+
+// update
+
+val newRecord = record + ("id" ->> 10)
+
+```
+---
+
+class: middle
+
+```scala
+ 
+import shapeless.Poly1
+import shapeless.labelled.{FieldType, field}
+
+object upd extends Poly1 {
+  implicit def whenString[K] = at[FieldType[K, String]](_ =>
+    field[K]("new name")
+  )
+  implicit def default[T] = at[T](identity)
+}
+
+
+val updRecord = record.map(upd)
+
+updRecord("name")  // => new name
+
+```
+
+---
+
+class: middle, center
+
+# Generic, LabeledGeneric
+
+---
+
+class: middle
+
+```scala
+// HList eq case class
+
+
+case class Person(id: Option[String], name: String, age: Int)
+
+// => 
+
+Option[String] :: String :: Int :: HNil
+
+```
+
+---
+
+class: middle
+
+### Generic convert case class to HList (Repr)
+### LabeledGeneric conver case class to Record (Repr)
+
+
+```scala
+trait Generic[T] extends Serializable {
+ type Repr
+ def to(t : T) : Repr
+ def from(r : Repr) : T
+}
+
+
+
+```
+
+---
+
+class: middle
+
+```scala
+val person = Person(None, "John Doe", 20)
+
+val personGen = Generic[Person]
+
+personGen.to(person) // => None :: John Doe :: 20 :: HNil
+```
+
+---
+
+class: middle
+
+```scala
+val personHList = Some("key") :: "Name" :: 19 :: HNil
+
+personGen.from(personHList) // => Person(Some(key), Name, 19)
+```
+
+---
+
+class: middle
+
+```scala
+import shapeless.record._
+
+val personLGen = LabelledGeneric[Person]
+
+val personRecord = personLGen.to(person)
+
+personRecord('name) // => John Doe
+```
+
+---
+
+class: middle, center
+
+# utils: lens, typeable, operators
+
+---
+
+class: middle
+
+```scala
+
+case class Address(street: String)
+
+case class Person(id: Int, name: String, address: Address)
+
+```
+
+---
+
+class: middle
+
+```scala
+import shapeless.lens
+
+val root = lens[Person]
+
+val idLens = root.id
+
+val nameLens = root >> 'name
+
+val streetLens  = root >> 'address >> 'street
+```
+
+---
+
+class: middle
+
+```scala
+val nameAndStreetLens = nameLens ~ streetLens
+```
+
+---
+class: middle
+
+```scala
+
+val p = Person(1, "John Doe", Address("Foo bar"))
+
+// get 
+s"get id: ${idLens.get(p)}" // => get id: 1
+
+//set 
+val p1 = idLens.set(p)(10)
+
+s"get id: ${idLens.get(p1)}" // => get id: 10
+
+
+// combine set
+
+val p2 = nameAndStreetLens.set(p)(("New name", "Baz"))
+
+s"name+street: ${nameAndStreetLens.get(p2)}" // => name+street: (New name,Baz)
+```
+---
+
+class: middle
+
+```scala
+import shapeless.syntax.typeable._
+
+val x: Any = p // p - Person
+
+x.cast[Person] // => Some(Person(1,John Doe,Address(Foo bar)))
+```
+
+---
+
+class: middle
+
+```scala
+import shapeless.syntax.std.tuple._
+import shapeless.Poly1
+
+object inc extends Poly1 {
+  implicit def caseInt    = at[Int](x => x + 1)
+  implicit def default[T] = at[T](identity)
+}
+
+val t = (1, "John Doe", 10d)
+
+val nt = t.map(inc) // => (2,John Doe,10.0)
+```
+
+[More operators](https://github.com/milessabin/shapeless/wiki/Feature-overview:-shapeless-2.1.0)
+
+---
+
+class: center, middle
+
+# Questions?
+
+
+
+    </textarea>
+<script src="remark-latest.min.js">
+</script>
+<script>
+      var slideshow = remark.create({
+        highlightStyle: 'tomorrow'
+      });
+    </script>
+<script src="remark-zoom.js" type="text/javascript"></script>
+</body>
+</html>
